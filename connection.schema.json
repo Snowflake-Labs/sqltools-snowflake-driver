@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "account": {
+      "title": "Account",
+      "type": "string",
+      "minLength": 1
+    },
+    "username": {
+      "title": "User",
+      "type": "string",
+      "minLength": 1
+    },
+    "password": {
+      "title": "Password",
+      "type": "string",
+      "minLength": 1
+    },
+    "snowflakeOptions": {
+      "title": "Connection Options",
+      "type": "object",
+      "properties": {    
+        "warehouse": {
+          "title": "Warehouse",
+          "type": "string",
+          "minLength": 1
+        },
+        "database": {
+          "title": "Database",
+          "type": "string",
+          "minLength": 1
+        },
+        "schema": {
+          "title": "Schema",
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "title": "Role",
+          "type": "string",
+          "minLength": 1
+        },
+        "clientSessionKeepAlive": {
+          "title": "Client Session Keep Alive",
+          "type": "boolean",
+          "default": true
+        },
+        "clientSessionKeepAliveHeartbeatFrequency": {
+          "title": "Keep Alive Heartbeat Frequency",
+          "type": "integer",
+          "minimum": 900,
+          "maximum": 3600, 
+          "default": 3600
+        }
+      }
+    }
+  },
+  "required": [
+    "account",
+    "username",
+    "password"
+  ]
+}
