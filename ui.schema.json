@@ -1,10 +1,10 @@
 {
   "ui:order": ["account", "username", "password", "warehouse", "database", "schema", "role"],
   "account": { "ui:help": "The full name of your account (provided by Snowflake). Note that your full account name might include additional segments that identify the region and cloud platform where your account is hosted." },
+  "database": { "ui:help": "The default database to use for the session after connecting." },
   "password": { "ui:widget": "password" },
   "snowflakeOptions": {
     "warehouse": { "ui:help": "The default virtual warehouse to use for the session after connecting. Used for performing queries, loading data, etc." },
-    "database": { "ui:help": "The default database to use for the session after connecting." },
     "schema": { "ui:help": "The default schema to use for the session after connecting." },
     "role": { "ui:help": "The default security role to use for the session after connecting." }
   }

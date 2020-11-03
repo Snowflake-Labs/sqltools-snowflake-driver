@@ -2,35 +2,13 @@ import AbstractDriver from '@sqltools/base-driver';
 import queries from './queries';
 import { IConnectionDriver, MConnectionExplorer, NSDatabase, ContextValue, Arg0 } from '@sqltools/types';
 import { v4 as generateId } from 'uuid';
+import { Snowflake } from 'snowflake-promise';
 
-/**
- * set Driver lib to the type of your connection.
- * Eg for postgres:
- * import { Pool, PoolConfig } from 'pg';
- * ...
- * type DriverLib = Pool;
- * type DriverOptions = PoolConfig;
- *
- * This will give you completions iside of the library
- */
 type DriverLib = any;
 type DriverOptions = any;
 
 export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOptions> implements IConnectionDriver {
-
-  public readonly deps: typeof AbstractDriver.prototype['deps'] = [{
-    type: AbstractDriver.CONSTANTS.DEPENDENCY_PACKAGE,
-    name: 'snowflake-sdk',
-    version: '1.5.3'
-  }];
-
-
   queries = queries;
-
-  private get lib() {
-    return this.requireDep('snowflake-sdk');
-  }
-
   public async open() {
     if (this.connection) {
       return this.connection;
@@ -38,8 +16,9 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     
     let connOptions = {
       account: this.credentials.account,
+      database: this.credentials.database,
       username: this.credentials.username,
-      password: this.credentials.password
+      password: this.credentials.password,
     };
     connOptions = {
       ...connOptions,
@@ -47,14 +26,9 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     };
     
     try {
-      const conn = this.lib.createConnection(connOptions);
-
-      this.connection = new Promise((resolve, reject) => conn.connect(err => {
-        if (err) {
-          reject(err);
-        }
-        resolve(conn);
-      }));
+      const conn = new Snowflake(connOptions);
+      await conn.connect();
+      this.connection = Promise.resolve(conn);
     } catch (error) {
       return Promise.reject(error);
     }
@@ -64,226 +38,140 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
 
   public async close() {
     if (!this.connection) return Promise.resolve();
-
-    await this.connection.then(conn => conn.disconnect());
+    const conn = await this.connection;
     this.connection = null;
+    conn.destroy();
   }
 
-  public query: (typeof AbstractDriver)['prototype']['query'] = async (queries, opt = {}) => {
-    const db = await this.open();
-    const queriesResults = await db.query(queries);
-    const resultsAgg: NSDatabase.IResult[] = [];
-    queriesResults.forEach(queryResult => {
-      resultsAgg.push({
-        cols: Object.keys(queryResult[0]),
-        connId: this.getId(),
-        messages: [{ date: new Date(), message: `Query ok with ${queriesResults.length} results`}],
-        results: queryResult,
-        query: queries.toString(),
-        requestId: opt.requestId,
-        resultId: generateId(),
+  public query: (typeof AbstractDriver)['prototype']['query'] = async (query, opt = {}) => {
+    const messages = [];
+    const { requestId, binds } = opt;
+    return this.open()
+      .then(async (conn) => {
+        const results = await conn.execute(query, binds);
+        return results
+      })
+      .then((results: any[] | any) => {
+        if (!Array.isArray(results)) {
+          results = [results];
+        }
+        const cols = [];
+        if (results && results.length > 0) {
+          for (const colName in results[0]) {
+            cols.push(colName)
+          }
+        }
+        
+        return [<NSDatabase.IResult>{
+          requestId,
+          resultId: generateId(),
+          connId: this.getId(),
+          cols,
+          messages: messages.concat([
+            this.prepareMessage ([
+              `Successfully executed. ${results.length} rows were affected.`
+            ].filter(Boolean).join(' '))
+          ]),
+          query,
+          results
+        }];
+      })
+      .catch(err => {
+        return [<NSDatabase.IResult>{
+          connId: this.getId(),
+          requestId,
+          resultId: generateId(),
+          cols: [],
+          messages: messages.concat([
+            this.prepareMessage ([
+              err.message.replace(/\n/g, ' ')
+            ].filter(Boolean).join(' '))
+          ]),
+          error: true,
+          rawError: err,
+          query,
+          results: []
+        }];
       });
-    });
-    /**
-     * write the method to execute queries here!!
-     */
-    return resultsAgg;
+  }
+
+  private async getColumns(parent: NSDatabase.ITable): Promise<NSDatabase.IColumn[]> {
+    const results = await this.queryResults(this.queries.fetchColumns(parent));
+    return results.map(col => ({
+      ...col,
+      iconName: null,
+      childType: ContextValue.NO_CHILD,
+      table: parent
+    }));
   }
 
   public async testConnection() {
     await this.open();
-    await this.close()
+
+    const db = this.credentials.database;
+    const dbList = await this.query('SHOW DATABASES', {});
+    if (dbList[0].error) {
+      return Promise.reject({ message: 'Cannot get database list' });
+    }
+    const dbFound = await this.query(
+      'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
+      { binds: [db] });
+    if (dbFound[0].error) {
+      return Promise.reject({ message: 'Cannot get database list' });
+    }
+    if (dbFound[0].results.length !== 1) {
+      return Promise.reject({ message: `Cannot find ${db} database`})
+    }
+    await this.close();
   }
 
-  /**
-   * This method is a helper to generate the connection explorer tree.
-   * it gets the child items based on current item
-   */
   public async getChildrenForItem({ item, parent }: Arg0<IConnectionDriver['getChildrenForItem']>) {
     switch (item.type) {
       case ContextValue.CONNECTION:
       case ContextValue.CONNECTED_CONNECTION:
+        return <NSDatabase.IDatabase[]>[{
+          label: this.credentials.database,
+          database: this.credentials.database,
+          type: ContextValue.DATABASE,
+          detail: 'database'
+        }];
+      case ContextValue.DATABASE:
+        return <MConnectionExplorer.IChildItem[]>[
+          { label: 'Schemas', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.SCHEMA },
+        ];
+      case ContextValue.SCHEMA:
         return <MConnectionExplorer.IChildItem[]>[
           { label: 'Tables', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.TABLE },
           { label: 'Views', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.VIEW },
         ];
       case ContextValue.TABLE:
       case ContextValue.VIEW:
-        let i = 0;
-        return <NSDatabase.IColumn[]>[{
-          database: 'fakedb',
-          label: `column${i++}`,
-          type: ContextValue.COLUMN,
-          dataType: 'faketype',
-          schema: 'fakeschema',
-          childType: ContextValue.NO_CHILD,
-          isNullable: false,
-          iconName: 'column',
-          table: parent,
-        },{
-          database: 'fakedb',
-          label: `column${i++}`,
-          type: ContextValue.COLUMN,
-          dataType: 'faketype',
-          schema: 'fakeschema',
-          childType: ContextValue.NO_CHILD,
-          isNullable: false,
-          iconName: 'column',
-          table: parent,
-        },{
-          database: 'fakedb',
-          label: `column${i++}`,
-          type: ContextValue.COLUMN,
-          dataType: 'faketype',
-          schema: 'fakeschema',
-          childType: ContextValue.NO_CHILD,
-          isNullable: false,
-          iconName: 'column',
-          table: parent,
-        },{
-          database: 'fakedb',
-          label: `column${i++}`,
-          type: ContextValue.COLUMN,
-          dataType: 'faketype',
-          schema: 'fakeschema',
-          childType: ContextValue.NO_CHILD,
-          isNullable: false,
-          iconName: 'column',
-          table: parent,
-        },{
-          database: 'fakedb',
-          label: `column${i++}`,
-          type: ContextValue.COLUMN,
-          dataType: 'faketype',
-          schema: 'fakeschema',
-          childType: ContextValue.NO_CHILD,
-          isNullable: false,
-          iconName: 'column',
-          table: parent,
-        }];
+        return this.getColumns(item as NSDatabase.ITable);
       case ContextValue.RESOURCE_GROUP:
         return this.getChildrenForGroup({ item, parent });
     }
     return [];
   }
 
-  /**
-   * This method is a helper to generate the connection explorer tree.
-   * It gets the child based on child types
-   */
   private async getChildrenForGroup({ parent, item }: Arg0<IConnectionDriver['getChildrenForItem']>) {
-    console.log({ item, parent });
     switch (item.childType) {
+      case ContextValue.SCHEMA:
+        return this.queryResults(this.queries.fetchSchemas(parent as NSDatabase.IDatabase));
       case ContextValue.TABLE:
+        return this.queryResults(this.queries.fetchTables(parent as NSDatabase.ISchema));
       case ContextValue.VIEW:
-        let i = 0;
-        return <MConnectionExplorer.IChildItem[]>[{
-          database: 'fakedb',
-          label: `${item.childType}${i++}`,
-          type: item.childType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        },{
-          database: 'fakedb',
-          label: `${item.childType}${i++}`,
-          type: item.childType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        },
-        {
-          database: 'fakedb',
-          label: `${item.childType}${i++}`,
-          type: item.childType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        }];
+        return this.queryResults(this.queries.fetchViews(parent as NSDatabase.ISchema));
     }
     return [];
   }
 
-  /**
-   * This method is a helper for intellisense and quick picks.
-   */
   public async searchItems(itemType: ContextValue, search: string, _extraParams: any = {}): Promise<NSDatabase.SearchableItem[]> {
     switch (itemType) {
       case ContextValue.TABLE:
       case ContextValue.VIEW:
-        let j = 0;
-        return [{
-          database: 'fakedb',
-          label: `${search || 'table'}${j++}`,
-          type: itemType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        },{
-          database: 'fakedb',
-          label: `${search || 'table'}${j++}`,
-          type: itemType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        },
-        {
-          database: 'fakedb',
-          label: `${search || 'table'}${j++}`,
-          type: itemType,
-          schema: 'fakeschema',
-          childType: ContextValue.COLUMN,
-        }]
+        this.queryResults(this.queries.searchTables({ search }));
       case ContextValue.COLUMN:
-        let i = 0;
-        return [
-          {
-            database: 'fakedb',
-            label: `${search || 'column'}${i++}`,
-            type: ContextValue.COLUMN,
-            dataType: 'faketype',
-            schema: 'fakeschema',
-            childType: ContextValue.NO_CHILD,
-            isNullable: false,
-            iconName: 'column',
-            table: 'fakeTable'
-          },{
-            database: 'fakedb',
-            label: `${search || 'column'}${i++}`,
-            type: ContextValue.COLUMN,
-            dataType: 'faketype',
-            schema: 'fakeschema',
-            childType: ContextValue.NO_CHILD,
-            isNullable: false,
-            iconName: 'column',
-            table: 'fakeTable'
-          },{
-            database: 'fakedb',
-            label: `${search || 'column'}${i++}`,
-            type: ContextValue.COLUMN,
-            dataType: 'faketype',
-            schema: 'fakeschema',
-            childType: ContextValue.NO_CHILD,
-            isNullable: false,
-            iconName: 'column',
-            table: 'fakeTable'
-          },{
-            database: 'fakedb',
-            label: `${search || 'column'}${i++}`,
-            type: ContextValue.COLUMN,
-            dataType: 'faketype',
-            schema: 'fakeschema',
-            childType: ContextValue.NO_CHILD,
-            isNullable: false,
-            iconName: 'column',
-            table: 'fakeTable'
-          },{
-            database: 'fakedb',
-            label: `${search || 'column'}${i++}`,
-            type: ContextValue.COLUMN,
-            dataType: 'faketype',
-            schema: 'fakeschema',
-            childType: ContextValue.NO_CHILD,
-            isNullable: false,
-            iconName: 'column',
-            table: 'fakeTable'
-          }
-        ];
+        return this.queryResults(this.queries.searchColumns({ search, ..._extraParams }));
     }
     return [];
   }

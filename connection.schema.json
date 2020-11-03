@@ -7,6 +7,11 @@
       "type": "string",
       "minLength": 1
     },
+    "database": {
+      "title": "Database",
+      "type": "string",
+      "minLength": 1
+    },
     "username": {
       "title": "User",
       "type": "string",
@@ -23,11 +28,6 @@
       "properties": {    
         "warehouse": {
           "title": "Warehouse",
-          "type": "string",
-          "minLength": 1
-        },
-        "database": {
-          "title": "Database",
           "type": "string",
           "minLength": 1
         },
@@ -58,6 +58,7 @@
   },
   "required": [
     "account",
+    "database",
     "username",
     "password"
   ]
