@@ -1,20 +1,19 @@
-# SQLTools snowflake Driver
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Creating icon
+# SQLTools Snowflake Driver
 
-PNG Images
-Size: 64x64px
-Default Icon: Opacity 100%, no margins and paddings
-Active icon: Opacity 100%, no margins and paddings, green (#00FF00) circle 24x24 bottom right
-Inactive icon: Opacity 50%, no margins and paddings
+A Visual Studio Code extension which extends the [SQLTools extension](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), with a driver to work with the Snowflake Database. It supports tables and views, as well as running queries on Snowflake.
 
-## Creating connectino schema for the assistant
+## Installation
 
-We are using `@rjsf/core` to render the forms, so in order to add you driver to the connection assistant,
-edit `connection.schema.json` and `ui.schema.json`.
+### From the VS Code Marketplace
 
-See https://react-jsonschema-form.readthedocs.io/en/latest/ for more instructions.
+In the [Snowflake Driver for SQLTools](https://marketplace.visualstudio.com/items?itemName=koszti.snowflake-driver-for-sqltools) VS Code marketplace page, click **Install**.
 
-## Publish the driver
+## Usage
 
-See https://code.visualstudio.com/api/working-with-extensions/publishing-extension
+After installing the Snowflake Driver for SQLTools, you will be able to create connections to Snowflake, explore tables and views, and run queries. For more information on how to use SQLTools please refer to [SQLTools extension](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools)
+
+## License
+
+Copyright (c) 2020 MIT License
