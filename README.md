@@ -17,7 +17,7 @@ After installing the Snowflake Driver for SQLTools, you will be able to create c
 
 ## What's not implemented:
 
-* **`externalbrowser` authenticator for SSO**: the snowflake nodejs connector doesn't implement the SSO authentication
+* **`externalbrowser` authenticator for SSO**: The [Snowflake NodeJS Connector](https://github.com/snowflakedb/snowflake-connector-nodejs) doesn't implement the SSO authentication
 * **Intellisense auto completion**: Fast code completion has to use the [SHOW commands](https://docs.snowflake.com/en/sql-reference/sql/show-objects.html) to get search results quickly but it requires to run multiple sql queries for each search term. SQLTools not supporting it at the moment.
 * **Automatic limit results**: Running `SELECT * FROM big_table` with no limit clause will fetch every row form the table. SQLTools doesn't have abort query function. Please always add `LIMIT 100` to the end of your SQL, otherwise you need to abort the query from the snowflake console.
 
