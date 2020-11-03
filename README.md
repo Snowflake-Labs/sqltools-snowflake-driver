@@ -4,6 +4,7 @@
 
 A Visual Studio Code extension which extends the [SQLTools extension](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), with a driver to work with the Snowflake Database. It supports tables and views, as well as running queries on Snowflake.
 
+![](https://raw.githubusercontent.com/koszti/sqltools-snowflake-driver/master/resources/readme/preview-sqltools-snowflak-driver.gif)
 ## Installation
 
 ### From the VS Code Marketplace
