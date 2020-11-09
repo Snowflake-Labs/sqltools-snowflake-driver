@@ -12,6 +12,11 @@
       "type": "string",
       "minLength": 1
     },
+    "warehouse": {
+      "title": "Warehouse",
+      "type": "string",
+      "minLength": 1
+    },
     "username": {
       "title": "User",
       "type": "string",
@@ -26,11 +31,6 @@
       "title": "Connection Options",
       "type": "object",
       "properties": {    
-        "warehouse": {
-          "title": "Warehouse",
-          "type": "string",
-          "minLength": 1
-        },
         "schema": {
           "title": "Schema",
           "type": "string",
@@ -59,6 +59,7 @@
   "required": [
     "account",
     "database",
+    "warehouse",
     "username",
     "password"
   ]
