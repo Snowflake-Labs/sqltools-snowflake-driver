@@ -2,7 +2,7 @@
   "name": "snowflake-driver-for-sqltools",
   "displayName": "Snowflake Driver for SQLTools",
   "description": "SQLTools Snowflake driver",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.42.0"
   },
