@@ -1,3 +1,9 @@
+0.2.0 (2020-11-09)
+-------------------
+
+- Make warehouse connection parameter mandatory
+- Fixed an issue when user without default warehouse could not connect to snowflake
+
 0.1.2 (2020-11-04)
 -------------------
 
