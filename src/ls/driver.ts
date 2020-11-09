@@ -126,7 +126,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
       { binds: [warehouse] });
     if (whFound[0].error) {
-      return Promise.reject({ message: `Cannot find ${warehouse} warehouse` });
+      return Promise.reject({ message: `Cannot find ${warehouse} warehouse. ${whFound[0].rawError}` });
     }
     if (whFound[0].results.length !== 1) {
       return Promise.reject({ message: `Cannot find ${warehouse} warehouse`})
@@ -140,7 +140,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
       { binds: [db] });
     if (dbFound[0].error) {
-      return Promise.reject({ message: `Cannot find ${db} database` });
+      return Promise.reject({ message: `Cannot find ${db} database. ${dbFound[0].rawError}` });
     }
     if (dbFound[0].results.length !== 1) {
       return Promise.reject({ message: `Cannot find ${db} database`})
