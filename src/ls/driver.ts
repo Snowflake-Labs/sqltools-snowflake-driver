@@ -17,6 +17,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     let connOptions = {
       account: this.credentials.account,
       database: this.credentials.database,
+      warehouse: this.credentials.warehouse,
       username: this.credentials.username,
       password: this.credentials.password,
     };
@@ -109,15 +110,37 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     await this.open();
 
     const db = this.credentials.database;
+    const warehouse = this.credentials.warehouse;
+    if (!db || !db.trim()) {
+      return Promise.reject({ message: 'Database parameter not set in connection. Please set it in the connection details.' });
+    }
+    if (!warehouse || !warehouse.trim()) {
+      return Promise.reject({ message: 'Warehouse parameter not set in connection. Please set it in the connection details.' });
+    }
+
+    const whList = await this.query('SHOW WAREHOUSES', {});
+    if (whList[0].error) {
+      return Promise.reject({ message: `Cannot get warehouse list. ${whList[0].rawError}` });
+    }
+    const whFound = await this.query(
+      'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
+      { binds: [warehouse] });
+    if (whFound[0].error) {
+      return Promise.reject({ message: `Cannot find ${warehouse} warehouse` });
+    }
+    if (whFound[0].results.length !== 1) {
+      return Promise.reject({ message: `Cannot find ${warehouse} warehouse`})
+    }
+
     const dbList = await this.query('SHOW DATABASES', {});
     if (dbList[0].error) {
-      return Promise.reject({ message: 'Cannot get database list' });
+      return Promise.reject({ message: `Cannot get database list. ${dbList[0].rawError}` });
     }
     const dbFound = await this.query(
       'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
       { binds: [db] });
     if (dbFound[0].error) {
-      return Promise.reject({ message: 'Cannot get database list' });
+      return Promise.reject({ message: `Cannot find ${db} database` });
     }
     if (dbFound[0].results.length !== 1) {
       return Promise.reject({ message: `Cannot find ${db} database`})
