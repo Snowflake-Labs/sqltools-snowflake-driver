@@ -1,3 +1,8 @@
+0.2.1 (2021-02-21)
+-------------------
+
+- Fixed an issue when could not connect to Snowflake if `QUOTED_IDENTIFIERS_IGNORE_CASE` parameters is True
+
 0.2.0 (2020-11-09)
 -------------------
 
