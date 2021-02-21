@@ -25,9 +25,14 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       ...connOptions,
       ...(this.credentials["snowflakeOptions"] || {})
     };
+
+    const loggingOptions = {};
+    const configureOptions = {
+      ocspFailOpen: this.credentials["ocspOptions"]["ocspFailOpen"]
+    }
     
     try {
-      const conn = new Snowflake(connOptions);
+      const conn = new Snowflake(connOptions, loggingOptions, configureOptions);
       await conn.connect();
       await conn.execute('ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = FALSE');
       this.connection = Promise.resolve(conn);

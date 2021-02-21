@@ -27,6 +27,17 @@
       "type": "string",
       "minLength": 1
     },
+    "ocspOptions": {
+      "title": "OCSP Options",
+      "type": "object",
+      "properties": {
+        "ocspFailOpen": {
+          "title": "OCSP Fail-Open",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "snowflakeOptions": {
       "title": "Connection Options",
       "type": "object",
