@@ -29,6 +29,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     try {
       const conn = new Snowflake(connOptions);
       await conn.connect();
+      await conn.execute('ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = FALSE');
       this.connection = Promise.resolve(conn);
     } catch (error) {
       return Promise.reject(error);
