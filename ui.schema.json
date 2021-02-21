@@ -4,6 +4,9 @@
   "database": { "ui:help": "The default database to use for the session after connecting." },
   "warehouse": { "ui:help": "The default virtual warehouse to use for the session after connecting. Used for performing queries, loading data, etc." },
   "password": { "ui:widget": "password" },
+  "ocspOptions": {
+    "ocspFailOpen": { "ui:help": "Enables OCSP fail-open functionality." }
+  },
   "snowflakeOptions": {
     "schema": { "ui:help": "The default schema to use for the session after connecting." },
     "role": { "ui:help": "The default security role to use for the session after connecting." }
