@@ -17,15 +17,15 @@
       "type": "string",
       "minLength": 1
     },
-    "username": {
-      "title": "User",
+    "authenticator": {
+      "title": "Authenticator",
       "type": "string",
-      "minLength": 1
-    },
-    "password": {
-      "title": "Password",
-      "type": "string",
-      "minLength": 1
+      "enum": [
+        "SNOWFLAKE",
+        "SNOWFLAKE_JWT"
+      ],
+      "enumNames": ["User & Password", "Key Pair"],
+      "default": "User & Password"
     },
     "ocspOptions": {
       "title": "OCSP Options",
@@ -67,11 +67,56 @@
       }
     }
   },
+  "dependencies": {
+    "authenticator": {
+      "oneOf": [
+        {
+          "properties": {
+            "authenticator": {
+              "enum": ["SNOWFLAKE"]
+            },
+            "username": {
+              "title": "User",
+              "type": "string",
+              "minLength": 1
+            },
+            "password": {
+              "title": "Password",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "username",
+            "password"
+          ]
+        },
+        {
+          "properties": {
+            "authenticator": {
+              "enum": ["SNOWFLAKE_JWT"]
+            },
+            "privateKeyPath": {
+              "title": "Private Key File",
+              "type": "string",
+              "minLength": 1
+            },
+            "privateKeyPass": {
+              "title": "Private Key Passphrase",
+              "type": "string"
+            }
+          },
+          "required": [
+            "privateKeyFile"
+          ]
+        }
+      ]
+    }
+  },
   "required": [
     "account",
     "database",
     "warehouse",
-    "username",
-    "password"
+    "authenticator"
   ]
 }
