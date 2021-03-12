@@ -22,9 +22,10 @@
       "type": "string",
       "enum": [
         "SNOWFLAKE",
-        "SNOWFLAKE_JWT"
+        "SNOWFLAKE_JWT",
+        "EXTERNALBROWSER"
       ],
-      "enumNames": ["User & Password", "Key Pair"],
+      "enumNames": ["User & Password", "Key Pair", "Browser Based SSO"],
       "default": "User & Password"
     },
     "ocspOptions": {
@@ -108,6 +109,21 @@
           },
           "required": [
             "privateKeyFile"
+          ]
+        },
+        {
+          "properties": {
+            "authenticator": {
+              "enum": ["EXTERNALBROWSER"]
+            },
+            "username": {
+              "title": "User",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "username"
           ]
         }
       ]
