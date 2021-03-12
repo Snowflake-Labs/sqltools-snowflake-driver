@@ -22,12 +22,22 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       privateKeyPath: this.credentials.privateKeyPath,
       privateKeyPass: this.credentials.privateKeyPass,
       username: this.credentials.username,
-      password: this.credentials.password,
+      password: this.credentials.password
     };
     connOptions = {
       ...connOptions,
       ...(this.credentials["snowflakeOptions"] || {})
     };
+
+    // snowflake-sdk 1.6.0 does not generate the region in externalbrowser auth
+    if(connOptions.authenticator === 'EXTERNALBROWSER') {
+      connOptions = {
+        ...connOptions,
+        ...{
+          region: this.credentials.account.substring(this.credentials.account.indexOf('.') + 1)
+        }
+      }
+    }
 
     const loggingOptions = {};
     const configureOptions = {
@@ -36,7 +46,15 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     
     try {
       const conn = new Snowflake(connOptions, loggingOptions, configureOptions);
-      await conn.connect();
+
+      // Browser Based SSO requires connectAsync
+      if(connOptions.authenticator === 'EXTERNALBROWSER') {
+        await conn.connectAsync(); 
+      }
+      else {
+        await conn.connect();
+      }
+
       await conn.execute('ALTER SESSION SET QUOTED_IDENTIFIERS_IGNORE_CASE = FALSE');
       this.connection = Promise.resolve(conn);
     } catch (error) {
