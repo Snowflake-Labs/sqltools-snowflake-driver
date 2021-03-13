@@ -1,3 +1,10 @@
+0.4.0 (2021-03-13)
+-------------------
+
+- Add Browser Based SSO authentication
+- Add Key Pair authentication
+- Add OAuth authentication
+
 0.3.0 (2021-02-21)
 -------------------
 
