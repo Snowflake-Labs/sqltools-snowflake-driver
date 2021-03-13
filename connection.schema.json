@@ -23,9 +23,10 @@
       "enum": [
         "SNOWFLAKE",
         "SNOWFLAKE_JWT",
-        "EXTERNALBROWSER"
+        "EXTERNALBROWSER",
+        "OAUTH"
       ],
-      "enumNames": ["User & Password", "Key Pair", "Browser Based SSO"],
+      "enumNames": ["User & Password", "Key Pair", "Browser Based SSO", "OAuth"],
       "default": "User & Password"
     },
     "ocspOptions": {
@@ -124,6 +125,21 @@
           },
           "required": [
             "username"
+          ]
+        },
+        {
+          "properties": {
+            "authenticator": {
+              "enum": ["OAUTH"]
+            },
+            "token": {
+              "title": "OAuth Token",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "token"
           ]
         }
       ]
