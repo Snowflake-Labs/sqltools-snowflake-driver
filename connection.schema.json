@@ -27,7 +27,12 @@
         "OAUTH"
       ],
       "enumNames": ["User & Password", "Key Pair", "Browser Based SSO", "OAuth"],
-      "default": "User & Password"
+      "default": "SNOWFLAKE"
+    },
+    "username": {
+      "title": "User",
+      "type": "string",
+      "minLength": 1
     },
     "ocspOptions": {
       "title": "OCSP Options",
@@ -77,11 +82,6 @@
             "authenticator": {
               "enum": ["SNOWFLAKE"]
             },
-            "username": {
-              "title": "User",
-              "type": "string",
-              "minLength": 1
-            },
             "password": {
               "title": "Password",
               "type": "string",
@@ -89,7 +89,6 @@
             }
           },
           "required": [
-            "username",
             "password"
           ]
         },
@@ -109,23 +108,16 @@
             }
           },
           "required": [
-            "privateKeyFile"
+            "privateKeyPath"
           ]
         },
         {
           "properties": {
             "authenticator": {
               "enum": ["EXTERNALBROWSER"]
-            },
-            "username": {
-              "title": "User",
-              "type": "string",
-              "minLength": 1
             }
           },
-          "required": [
-            "username"
-          ]
+          "required": []
         },
         {
           "properties": {
@@ -149,6 +141,7 @@
     "account",
     "database",
     "warehouse",
-    "authenticator"
+    "authenticator",
+    "username"
   ]
 }
