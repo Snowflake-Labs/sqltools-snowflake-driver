@@ -1,3 +1,8 @@
+0.4.1 (2021-03-15)
+-------------------
+
+- Fixed an issue when Browser Based SSO could not connect to Snowflake account in Oregon US West region
+
 0.4.0 (2021-03-13)
 -------------------
 
