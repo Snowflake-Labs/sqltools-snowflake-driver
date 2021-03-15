@@ -31,7 +31,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     };
 
     // snowflake-sdk 1.6.0 does not generate the region in externalbrowser auth
-    if(connOptions.authenticator === 'EXTERNALBROWSER') {
+    if(connOptions.authenticator === 'EXTERNALBROWSER' && this.credentials.account.indexOf('.') > 0) {
       connOptions = {
         ...connOptions,
         ...{
