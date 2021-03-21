@@ -1,3 +1,9 @@
+0.4.2 (2021-03-21)
+-------------------
+
+- Fixed an issue when case sensitive database object names or ones with special characters didn't show up in the object browser
+- Added meaningful error messages when Snowflake account in the connection screen was not given in the correct format
+
 0.4.1 (2021-03-15)
 -------------------
 
