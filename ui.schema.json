@@ -16,9 +16,9 @@
   "privateKeyPass": { "ui:widget": "password", "ui:help": "Leave empty if no passphrase" },
   "token": { "ui:widget": "password" },
   "account": { "ui:help":
-    "The full name of your account (provided by Snowflake). The account name does not contain .snowflakecomputing.com. It's using the format of <account_name>[.<region_id>][.<cloud>]. For example: (e.g. 'xy12345.east-us-2.azure') Further information at https://docs.snowflake.com/en/user-guide/connecting.html#your-snowflake-account-name"
+    "The full name of your account (provided by Snowflake). The account name does not contain .snowflakecomputing.com. It's using the format of <account_name>[.<region_id>][.<cloud>]. (e.g. 'xy12345.east-us-2.azure') Further information at https://docs.snowflake.com/en/user-guide/connecting.html#your-snowflake-account-name"
   },
-  "database": { "ui:help": "The default database to use for the session after connecting." },
+  "database": { "ui:help": "The default database to use for the session after connecting. It the database name is case sensitive or has special characters then use double quotes. (e.g. \"DB-Dev\")" },
   "warehouse": { "ui:help": "The default virtual warehouse to use for the session after connecting. Used for performing queries, loading data, etc." },
   "password": { "ui:widget": "password" },
   "ocspOptions": {
