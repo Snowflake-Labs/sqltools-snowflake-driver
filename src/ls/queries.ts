@@ -16,7 +16,7 @@ const fetchColumns: IBaseQueries['fetchColumns'] = queryFactory`
 SELECT
   column_name as "label",
   '${ContextValue.COLUMN}' as type,
-  table_name as "table",
+  'table_name' as "table",
   data_type as "dataType",
   UPPER(data_type || (
     CASE WHEN character_maximum_length > 0 THEN (
@@ -30,23 +30,22 @@ SELECT
   is_nullable as "isNullable",
   false as "isPk",
   false as "isFk"
-FROM ${p => p.database}.information_schema.columns c
-WHERE table_catalog = UPPER('${p => p.database}')
-      AND table_schema = UPPER('${p => p.schema}')
-      AND table_name = UPPER('${p => p.label}')
+FROM "${p => p.database}".information_schema.columns c
+WHERE table_schema = '${p => p.schema}'
+      AND table_name = '${p => p.label}'
 ORDER BY ordinal_position
 `;
 
 const fetchRecords: IBaseQueries['fetchRecords'] = queryFactory`
 SELECT *
-FROM ${p => p.table.database}.${p => p.table.schema}.${p => p.table.label}
+FROM "${p => p.table.database}"."${p => p.table.schema}"."${p => p.table.label}"
 LIMIT ${p => p.limit || 50}
 OFFSET ${p => p.offset || 0};
 `;
 
 const countRecords: IBaseQueries['countRecords'] = queryFactory`
 SELECT COUNT(1) AS "total"
-FROM ${p => p.table.database}.${p => p.table.schema}.${p => p.table.label}
+FROM "${p => p.table.database}"."${p => p.table.schema}"."${p => p.table.label}"
 `;
 
 const fetchTablesAndViews = (type: ContextValue, tableType = 'BASE TABLE'): IBaseQueries['fetchTables'] => queryFactory`
@@ -55,9 +54,8 @@ SELECT table_name as "label",
   table_schema as "schema",
   table_catalog as "database",
   ${type === ContextValue.VIEW ? 'TRUE' : 'FALSE'} as "isView"
-FROM ${p => p.database}.information_schema.tables
-WHERE table_catalog = UPPER('${p => p.database}')
-      AND table_schema = UPPER('${p => p.schema}')
+FROM "${p => p.database}".information_schema.tables
+WHERE table_schema = '${p => p.schema}'
       AND table_type = '${tableType}'
 ORDER BY table_name
 `;
@@ -75,7 +73,6 @@ SELECT
 FROM ${p => p.database}.information_schema.schemata
 WHERE
   schema_name != 'INFORMATION_SCHEMA'
-  AND catalog_name = UPPER('${p => p.database}')
 ORDER BY 2
 `;
 

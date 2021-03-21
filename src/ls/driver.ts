@@ -72,6 +72,52 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       return Promise.reject(error);
     }
 
+    const db = this.credentials.database;
+    const warehouse = this.credentials.warehouse;
+    if (!db || !db.trim()) {
+      return Promise.reject({ message: 'Database parameter not set in connection. Please set it in the connection details.' });
+    }
+    if (!warehouse || !warehouse.trim()) {
+      return Promise.reject({ message: 'Warehouse parameter not set in connection. Please set it in the connection details.' });
+    }
+
+    const whList = await this.query('SHOW WAREHOUSES', {});
+    if (whList[0].error) {
+      return Promise.reject({ message: `Cannot get warehouse list. ${whList[0].rawError}` });
+    }
+    const whFound = await this.query(
+      'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
+      { binds: [warehouse] });
+    if (whFound[0].error) {
+      return Promise.reject({ message: `Cannot find ${warehouse} warehouse. ${whFound[0].rawError}` });
+    }
+    if (whFound[0].results.length !== 1) {
+      return Promise.reject({ message: `Cannot find ${warehouse} warehouse`})
+    }
+
+    const dbList = await this.query('SHOW DATABASES', {});
+    if (dbList[0].error) {
+      return Promise.reject({ message: `Cannot get database list. ${dbList[0].rawError}` });
+    }
+    let dbFound: any;
+    // Find unquoted databases
+    if (db.indexOf('"') === -1) {
+      dbFound = await this.query(
+        'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE "name" = UPPER(:1)',
+        { binds: [db] });
+    // Find quoted databases
+    } else {
+      dbFound = await this.query(
+        'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE "name" =:1',
+        { binds: [db.replace(/"/g, '')] });
+    }
+    if (dbFound[0].error) {
+      return Promise.reject({ message: `Cannot find ${db} database. ${dbFound[0].rawError}` });
+    }
+    if (dbFound[0].results.length !== 1) {
+      return Promise.reject({ message: `Cannot find ${db.replace(/"/g, '')} database`})
+    }
+
     return this.connection;
   }
 
@@ -146,42 +192,9 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
 
   public async testConnection() {
     await this.open();
-
-    const db = this.credentials.database;
-    const warehouse = this.credentials.warehouse;
-    if (!db || !db.trim()) {
-      return Promise.reject({ message: 'Database parameter not set in connection. Please set it in the connection details.' });
-    }
-    if (!warehouse || !warehouse.trim()) {
-      return Promise.reject({ message: 'Warehouse parameter not set in connection. Please set it in the connection details.' });
-    }
-
-    const whList = await this.query('SHOW WAREHOUSES', {});
-    if (whList[0].error) {
-      return Promise.reject({ message: `Cannot get warehouse list. ${whList[0].rawError}` });
-    }
-    const whFound = await this.query(
-      'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
-      { binds: [warehouse] });
-    if (whFound[0].error) {
-      return Promise.reject({ message: `Cannot find ${warehouse} warehouse. ${whFound[0].rawError}` });
-    }
-    if (whFound[0].results.length !== 1) {
-      return Promise.reject({ message: `Cannot find ${warehouse} warehouse`})
-    }
-
-    const dbList = await this.query('SHOW DATABASES', {});
-    if (dbList[0].error) {
-      return Promise.reject({ message: `Cannot get database list. ${dbList[0].rawError}` });
-    }
-    const dbFound = await this.query(
-      'SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())) WHERE UPPER("name") = UPPER(:1)',
-      { binds: [db] });
-    if (dbFound[0].error) {
-      return Promise.reject({ message: `Cannot find ${db} database. ${dbFound[0].rawError}` });
-    }
-    if (dbFound[0].results.length !== 1) {
-      return Promise.reject({ message: `Cannot find ${db} database`})
+    const testSelect = await this.query('SELECT 1', {});
+    if (testSelect[0].error) {
+      return Promise.reject({ message: `Connected but cannot run SQL. ${testSelect[0].rawError}` });
     }
     await this.close();
   }
@@ -191,7 +204,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       case ContextValue.CONNECTION:
       case ContextValue.CONNECTED_CONNECTION:
         return <NSDatabase.IDatabase[]>[{
-          label: this.credentials.database,
+          label: this.credentials.database.replace(/"/g, ''),
           database: this.credentials.database,
           type: ContextValue.DATABASE,
           detail: 'database'
