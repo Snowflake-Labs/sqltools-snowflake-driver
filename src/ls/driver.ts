@@ -30,6 +30,16 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       ...(this.credentials["snowflakeOptions"] || {})
     };
 
+    if(this.credentials.account.indexOf('snowflakecomputing.com') > 0) {
+      return Promise.reject(
+        new Error(
+          "The account should not include snowflakecomputing.com. It needs to follow the <account_name>[.<region_id>][.<cloud>] \
+          pattern and should be one of the supported account locators listed at \
+          https://docs.snowflake.com/en/user-guide/nodejs-driver-use.html#required-connection-options"
+        )
+      );
+    }
+
     // snowflake-sdk 1.6.0 does not generate the region in externalbrowser auth
     if(connOptions.authenticator === 'EXTERNALBROWSER' && this.credentials.account.indexOf('.') > 0) {
       connOptions = {
