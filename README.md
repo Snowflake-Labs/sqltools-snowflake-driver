@@ -23,7 +23,8 @@ After installing the Snowflake Driver for SQLTools, you will be able to create c
 ## To develop
 
 1. Clone this repository and open it in VS Code.
-2. Press `F5` to start a debuging session. This opens a new VS Code window with the SQLTools Snowflake Driver extension loaded.
+2. Run `npm install` to install dependencies.
+3. Press `F5` to start a debuging session. This opens a new VS Code window with the SQLTools Snowflake Driver extension loaded.
    Output from the extension with your local changes shows up in the `Debug Console`. You can set break points, step through
    your code, and inspect variables either in the `Debug` view or the `Debug Console`.
 
