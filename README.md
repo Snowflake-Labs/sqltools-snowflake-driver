@@ -20,6 +20,13 @@ After installing the Snowflake Driver for SQLTools, you will be able to create c
 * **Intellisense auto completion**: Fast code completion has to use the [SHOW commands](https://docs.snowflake.com/en/sql-reference/sql/show-objects.html) to get search results quickly but it requires to run multiple sql queries for each search term. SQLTools not supporting it at the moment.
 * **Automatic limit results**: Running `SELECT * FROM big_table` with no limit clause will fetch every row form the table. SQLTools doesn't have abort query function. Please always add `LIMIT 100` to the end of your SQL, otherwise you need to abort the query from the snowflake console.
 
+## To develop
+
+1. Clone this repository and open it in VS Code.
+2. Press `F5` to start a debuging session. This opens a new VS Code window with the SQLTools Snowflake Driver extension loaded.
+   Output from the extension with your local changes shows up in the `Debug Console`. You can set break points, step through
+   your code, and inspect variables either in the `Debug` view or the `Debug Console`.
+
 ## License
 
 Copyright (c) 2021 MIT License
