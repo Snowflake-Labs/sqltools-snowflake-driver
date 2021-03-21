@@ -34,7 +34,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       return Promise.reject(
         new Error(
           "The account should not include snowflakecomputing.com. It needs to follow the <account_name>[.<region_id>][.<cloud>] \
-          pattern and should be one of the supported account locators defined at \
+          pattern and should be one of the supported account locators listed at \
           https://docs.snowflake.com/en/user-guide/nodejs-driver-use.html#required-connection-options"
         )
       );
