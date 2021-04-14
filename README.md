@@ -28,6 +28,7 @@ After installing the Snowflake Driver for SQLTools, you will be able to create c
    Output from the extension with your local changes shows up in the `Debug Console`. You can set break points, step through
    your code, and inspect variables either in the `Debug` view or the `Debug Console`.
 
+..
 ## License
 
 Copyright (c) 2021 MIT License
