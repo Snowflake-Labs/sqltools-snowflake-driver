@@ -32,3 +32,6 @@ After installing the Snowflake Driver for SQLTools, you will be able to create c
 ## License
 
 Copyright (c) 2021 MIT License
+
+## Support
+This is a community built and maintained project. If you need support, [please create a new issue.](https://github.com/Snowflake-Labs/sqltools-snowflake-driver/issues/new)
