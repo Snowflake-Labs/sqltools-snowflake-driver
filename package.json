@@ -18,9 +18,13 @@
     "email": "peter.kosztolanyi@gmail.com"
   },
   "scripts": {
+    "clean": "rimraf -rf out *.vsix",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-yarn --allow-star-activation -o .",
+    "publish:vsce": "vsce publish --no-yarn --allow-star-activation -p $VSCE_PAT -i",
+    "publish:ovsx": "ovsx publish -p $OVSX_PAT"
   },
   "keywords": [
     "snowflake",
@@ -44,14 +48,17 @@
   "dependencies": {
     "@sqltools/base-driver": "latest",
     "@sqltools/types": "latest",
-    "uuid": "^7.0.2",
+    "snowflake-promise": "^4.5.0",
     "snowflake-sdk": "^1.6.0",
-    "snowflake-promise": "^4.5.0"
+    "uuid": "^7.0.2"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.5.5",
     "@types/node": "^14.0.9",
     "@types/vscode": "^1.42.0",
-    "typescript": "^3.7.3"
+    "ovsx": "^0.5.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.7.3",
+    "vsce": "^2.11.0"
   }
 }
