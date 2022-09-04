@@ -1,0 +1,88 @@
+name: CI/CD
+
+on:
+  push:
+    paths-ignore:
+      - ".devcontainer/**"
+      - ".github/dependabot.yml"
+      - ".ncurc.json"
+      - "*.md"
+      - "LICENSE"
+  pull_request:
+    paths-ignore:
+      - ".devcontainer/**"
+      - ".github/dependabot.yml"
+      - ".ncurc.json"
+      - "*.md"
+      - "LICENSE"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Bundle
+        run: npm run package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: vsix
+          path: snowflake-driver-for-sqltools-*.vsix
+
+  release:
+    name: Release
+    runs-on: ubuntu-20.04
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: vsix
+
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(jq -r .version package.json)
+
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.VSCE_PAT }}
+          extensionFile: snowflake-driver-for-sqltools-${{ steps.get_version.outputs.VERSION }}.vsix
+          registryUrl: https://marketplace.visualstudio.com
+
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OVSX_PAT }}
+          extensionFile: snowflake-driver-for-sqltools-${{ steps.get_version.outputs.VERSION }}.vsix
+          registryUrl: https://open-vsx.org
+
+      - name: Create release body
+        id: extract_changes
+        uses: ultram4rine/extract-changes-action@v1
+        with:
+          changelog: CHANGELOG.md
+          version: ${{ steps.get_version.outputs.VERSION }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.extract_changes.outputs.changes }}
+          files: |
+            snowflake-driver-for-sqltools-*.vsix
