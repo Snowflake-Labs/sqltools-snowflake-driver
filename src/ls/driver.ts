@@ -96,7 +96,6 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     }
 
     const dbList = await this.query('SHOW DATABASES', {});
-    console.log(dbList);
     if (dbList[0].error) {
       return Promise.reject({ message: `Cannot get database list. ${dbList[0].rawError}` });
     }
