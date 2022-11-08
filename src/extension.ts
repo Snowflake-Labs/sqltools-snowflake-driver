@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IExtension, IExtensionPlugin, IDriverExtensionApi } from '@sqltools/types';
+import { IExtension, IExtensionPlugin, IDriverExtensionApi, NSDatabase, MConnectionExplorer, IBaseQueries, QueryBuilder, ContextValue } from '@sqltools/types';
 import { ExtensionContext } from 'vscode';
 import { DRIVER_ALIASES } from './constants';
 const { publisher, name } = require('../package.json');
@@ -79,3 +79,29 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
 }
 
 export function deactivate() {}
+
+export interface ISnowflakeQueries extends IBaseQueries {
+  fetchMaterializedViews: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IMaterializedView>;
+  fetchStages: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStage>;
+  fetchPipes: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IPipe>;
+  fetchStreams: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStream>;
+  fetchTasks: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.ITask>;
+  fetchProcedures: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IProcedure>;
+  fetchFileFormats: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IFileFormat>;
+  fetchSequences: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.ISequence>;
+}
+
+export namespace SnowflakeDatabase {
+  export interface ISnowflakeConstruct extends MConnectionExplorer.IChildItem {
+    // childType: ContextValue
+  }
+
+  export interface IMaterializedView extends ISnowflakeConstruct { childType: ContextValue.COLUMN }
+  export interface IStage extends ISnowflakeConstruct { }
+  export interface IPipe extends ISnowflakeConstruct { }
+  export interface IStream extends ISnowflakeConstruct { }
+  export interface ITask extends ISnowflakeConstruct { }
+  export interface IProcedure extends ISnowflakeConstruct { }
+  export interface IFileFormat extends ISnowflakeConstruct { }
+  export interface ISequence extends ISnowflakeConstruct { }
+}

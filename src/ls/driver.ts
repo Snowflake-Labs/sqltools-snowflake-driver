@@ -3,6 +3,7 @@ import queries from './queries';
 import { IConnectionDriver, MConnectionExplorer, NSDatabase, ContextValue, Arg0 } from '@sqltools/types';
 import { v4 as generateId } from 'uuid';
 import { Snowflake } from 'snowflake-promise';
+import { SnowflakeDatabase } from '../extension';
 
 type DriverLib = any;
 type DriverOptions = any;
@@ -180,13 +181,138 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       });
   }
 
-  private async getColumns(parent: NSDatabase.ITable): Promise<NSDatabase.IColumn[]> {
+  private async getColumns(parent): Promise<NSDatabase.IColumn[]> {
     const results = await this.queryResults(this.queries.fetchColumns(parent));
     return results.map(col => ({
       ...col,
       iconName: null,
       childType: ContextValue.NO_CHILD,
       table: parent
+    }));
+  }
+
+  private async getMaterializedViews(parent): Promise<NSDatabase.ITable[]> {
+    const results = await this.queryResults(this.queries.fetchMaterializedViews(parent));
+    return results.map(mv => ({
+      label: mv.name,
+      database: mv.database_name,
+      schema: mv.schema_name,
+      iconId: 'table',
+      type: ContextValue.TABLE,
+      isView: true,
+    }));
+  }
+
+  // Figure out what is supposed to be nested under this item
+  private async getFunctions(parent): Promise<NSDatabase.IFunction[]> {
+    const results = await this.queryResults(this.queries.fetchFunctions(parent));
+    var thing = results.map(func => ({
+      name: func.name,
+      label: func.name,
+      database: func.database_name,
+      schema: func.schema_name,
+      signature: func.arguments,
+      args: func.arguments
+              .substring(func.arguments.indexOf("(") + 1, func.arguments.lastIndexOf(")"))
+              .split(',')
+              .map(arg => { return arg.trim(); }),
+      resultType: func.arguments.split('RETURN ')[1],
+      detail: func.arguments.substring(func.arguments.indexOf("("), func.arguments.lastIndexOf(")") + 1)
+      type: ContextValue.FUNCTION
+      childType: ContextValue.NO_CHILD
+    }));
+
+    return thing;
+  }
+
+  private async getStages(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IStage[]> {
+    const results = await this.queryResults(this.queries.fetchStages(parent));
+    return results.map(stage => ({
+      label: stage.name.replace(/"/g, ''),
+      database: stage.database_name,
+      schema: stage.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'layers',
+      detail: stage.url
+    }));
+  }
+
+  private async getPipes(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IPipe[]> {
+    const results = await this.queryResults(this.queries.fetchPipes(parent));
+    return results.map(pipe => ({
+      label: pipe.name,
+      database: pipe.database_name,
+      schema: pipe.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'export'
+    }));
+  }
+
+  // TODO: Validate that this is correct
+  private async getStreams(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IStream[]> {
+    const results = await this.queryResults(this.queries.fetchStreams(parent));
+    return results.map(stream => ({
+      label: stream.name,
+      database: stream.database_name,
+      schema: stream.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'debug-line-by-line',
+      detail: stream.table_name
+    }));
+  }
+
+  private async getTasks(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.ITask[]> {
+    const results = await this.queryResults(this.queries.fetchTasks(parent));
+    return results.map(task => ({
+      label: task.name,
+      database: task.database_name,
+      schema: task.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'check',
+      detail: task.schedule
+    }));
+  }
+
+  private async getProcedures(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IProcedure[]> {
+    const results = await this.queryResults(this.queries.fetchProcedures(parent));
+    return results.map(proc => ({
+      label: proc.name,
+      database: parent.database,
+      schema: proc.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'circuit-board',
+      detail: proc.arguments.substring(proc.arguments.indexOf("("), proc.arguments.lastIndexOf(")") + 1)
+    }));
+  }
+
+  private async getFileFormats(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IFileFormat[]> {
+    const results = await this.queryResults(this.queries.fetchFileFormats(parent));
+    return results.map(fileFormat => ({
+      label: fileFormat.name.replace(/"/g, ''),
+      database: fileFormat.database_name,
+      schema: fileFormat.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'file-code',
+      detail: fileFormat.type
+    }));
+  }
+
+  private async getSequences(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.ISequence[]> {
+    const results = await this.queryResults(this.queries.fetchSequences(parent));
+    return results.map(seq => ({
+      label: seq.name,
+      database: seq.database_name,
+      schema: seq.schema_name,
+      type: ContextValue.RESOURCE_GROUP,
+      childType: ContextValue.NO_CHILD,
+      iconId: 'list-ordered',
+      detail: seq.next_value.toString()
     }));
   }
 
@@ -216,7 +342,16 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       case ContextValue.SCHEMA:
         return <MConnectionExplorer.IChildItem[]>[
           { label: 'Tables', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.TABLE },
+          { label: 'Materialized Views', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.MATERIALIZED_VIEW },
           { label: 'Views', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.VIEW },
+          { label: 'Stages', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Pipes', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Streams', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Tasks', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Functions', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.FUNCTION },
+          { label: 'Procedures', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'File Formats', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Sequences', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
         ];
       case ContextValue.TABLE:
       case ContextValue.VIEW:
@@ -235,7 +370,28 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
         return this.queryResults(this.queries.fetchTables(parent as NSDatabase.ISchema));
       case ContextValue.VIEW:
         return this.queryResults(this.queries.fetchViews(parent as NSDatabase.ISchema));
-    }
+      case ContextValue.MATERIALIZED_VIEW:
+        return this.getMaterializedViews(parent as NSDatabase.ISchema);
+      case ContextValue.FUNCTION:
+        return this.getFunctions(parent as NSDatabase.ISchema);
+      case ContextValue.RESOURCE_GROUP:
+        switch (item.label) {
+          case 'Stages':
+            return this.getStages(parent as NSDatabase.ISchema);
+          case 'Pipes':
+            return this.getPipes(parent as NSDatabase.ISchema);
+          case 'Streams':
+            return this.getStreams(parent as NSDatabase.ISchema);
+          case 'Tasks':
+            return this.getTasks(parent as NSDatabase.ISchema);
+          case 'Procedures':
+            return this.getProcedures(parent as NSDatabase.ISchema);
+          case 'File Formats':
+            return this.getFileFormats(parent as NSDatabase.ISchema);
+          case 'Sequences':
+            return this.getSequences(parent as NSDatabase.ISchema);
+        }
+      }
     return [];
   }
 
