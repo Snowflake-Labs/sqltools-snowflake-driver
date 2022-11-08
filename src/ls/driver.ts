@@ -203,7 +203,6 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     }));
   }
 
-  // Figure out what is supposed to be nested under this item
   private async getFunctions(parent): Promise<NSDatabase.IFunction[]> {
     const results = await this.queryResults(this.queries.fetchFunctions(parent));
     var thing = results.map(func => ({
