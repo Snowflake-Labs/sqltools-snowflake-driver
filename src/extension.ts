@@ -92,16 +92,12 @@ export interface ISnowflakeQueries extends IBaseQueries {
 }
 
 export namespace SnowflakeDatabase {
-  export interface ISnowflakeConstruct extends MConnectionExplorer.IChildItem {
-    // childType: ContextValue
-  }
-
-  export interface IMaterializedView extends ISnowflakeConstruct { childType: ContextValue.COLUMN }
-  export interface IStage extends ISnowflakeConstruct { }
-  export interface IPipe extends ISnowflakeConstruct { }
-  export interface IStream extends ISnowflakeConstruct { }
-  export interface ITask extends ISnowflakeConstruct { }
-  export interface IProcedure extends ISnowflakeConstruct { }
-  export interface IFileFormat extends ISnowflakeConstruct { }
-  export interface ISequence extends ISnowflakeConstruct { }
+  export interface IMaterializedView extends MConnectionExplorer.IChildItem { childType: ContextValue.COLUMN }
+  export interface IStage extends MConnectionExplorer.IChildItem { }
+  export interface IPipe extends MConnectionExplorer.IChildItem { }
+  export interface IStream extends MConnectionExplorer.IChildItem { }
+  export interface ITask extends MConnectionExplorer.IChildItem { }
+  export interface IProcedure extends MConnectionExplorer.IChildItem { }
+  export interface IFileFormat extends MConnectionExplorer.IChildItem { }
+  export interface ISequence extends MConnectionExplorer.IChildItem { }
 }

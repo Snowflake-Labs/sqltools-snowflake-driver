@@ -181,7 +181,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       });
   }
 
-  private async getColumns(parent): Promise<NSDatabase.IColumn[]> {
+  private async getColumns(parent: NSDatabase.ITable): Promise<NSDatabase.IColumn[]> {
     const results = await this.queryResults(this.queries.fetchColumns(parent));
     return results.map(col => ({
       ...col,
