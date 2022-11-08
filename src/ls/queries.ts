@@ -3,6 +3,15 @@ import queryFactory from '@sqltools/base-driver/dist/lib/factory';
 
 /** write your queries here go fetch desired data. This queries are just examples copied from SQLite driver */
 
+const fetchDatabases: IBaseQueries['fetchDatabases'] = queryFactory`
+SELECT database_name as "label"
+     , database_name as "database"
+     , '${ContextValue.DATABASE}' as "type"
+     , 'database' as "detail"
+FROM information_schema.databases
+ORDER BY database_name
+`;
+
 const describeTable: IBaseQueries['describeTable'] = queryFactory`
   SELECT C.*
   FROM ${p => p.database}.information_schema.columns c
@@ -120,6 +129,7 @@ export default {
   countRecords,
   fetchColumns,
   fetchRecords,
+  fetchDatabases,
   fetchTables,
   fetchViews,
   fetchSchemas,
