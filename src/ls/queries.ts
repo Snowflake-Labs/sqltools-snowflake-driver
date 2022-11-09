@@ -1,5 +1,6 @@
 import { IBaseQueries, ContextValue } from '@sqltools/types';
 import queryFactory from '@sqltools/base-driver/dist/lib/factory';
+import { ISnowflakeQueries } from '../extension';
 
 /** write your queries here go fetch desired data. This queries are just examples copied from SQLite driver */
 
@@ -69,9 +70,6 @@ WHERE table_schema = '${p => p.schema}'
 ORDER BY table_name
 `;
 
-const fetchTables: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.TABLE);
-const fetchViews: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.VIEW , 'VIEW');
-
 const fetchSchemas: IBaseQueries['fetchSchemas'] = queryFactory`
 SELECT
   schema_name as "label",
@@ -85,8 +83,48 @@ WHERE
 ORDER BY 2
 `;
 
+const fetchTables: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.TABLE);
+
+const fetchMaterializedViews: ISnowflakeQueries['fetchMaterializedViews'] = queryFactory`
+SHOW MATERIALIZED VIEWS IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchViews: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.VIEW , 'VIEW');
+
+const fetchStages: ISnowflakeQueries['fetchStages'] = queryFactory`
+SHOW STAGES IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchPipes: ISnowflakeQueries['fetchPipes'] = queryFactory`
+SHOW PIPES IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchStreams: ISnowflakeQueries['fetchStreams'] = queryFactory`
+SHOW STREAMS IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchTasks: ISnowflakeQueries['fetchTasks'] = queryFactory`
+SHOW TASKS IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchSFFunctions: ISnowflakeQueries['fetchSFFunctions'] = queryFactory`
+SHOW USER FUNCTIONS IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchProcedures: ISnowflakeQueries['fetchProcedures'] = queryFactory`
+SHOW USER PROCEDURES IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchFileFormats: ISnowflakeQueries['fetchFileFormats'] = queryFactory`
+SHOW FILE FORMATS IN ${p => p.database}.${p => p.schema}
+`;
+
+const fetchSequences: ISnowflakeQueries['fetchSequences'] = queryFactory`
+SHOW SEQUENCES IN ${p => p.database}.${p => p.schema}
+`;
+
 /**
- * Intellisense code completion is not implemnted
+ * Intellisense code completion is not implemented
  * 
  * Auto completion should use SHOW TABLES <object> LIKE <pattern> IN <object_type>
  * because selecting from INFORMATION SCHEMA directly is too slow.
@@ -106,7 +144,7 @@ WHERE 1 = 0
 `;
 
 /**
- * Intellisense code completion is not implemnted
+ * Intellisense code completion is not implemented
  * 
  * Auto completion should use SHOW TABLES <object> LIKE <pattern> IN <object_type>
  * because selecting from INFORMATION SCHEMA directly is too slow.
@@ -124,15 +162,25 @@ SELECT 'no-column' as "label",
 WHERE 1 = 0
 `;
 
+
 export default {
-  describeTable,
   countRecords,
+  describeTable,
   fetchColumns,
-  fetchRecords,
   fetchDatabases,
-  fetchTables,
-  fetchViews,
+  fetchFileFormats,
+  fetchSFFunctions,
+  fetchMaterializedViews,
+  fetchPipes,
+  fetchProcedures,
+  fetchRecords,
   fetchSchemas,
-  searchTables,
-  searchColumns
+  fetchSequences,
+  fetchStages,
+  fetchStreams,
+  fetchTables,
+  fetchTasks,
+  fetchViews,
+  searchColumns,
+  searchTables
 }
