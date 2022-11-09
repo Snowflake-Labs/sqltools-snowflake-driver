@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-11-09
+
+### Added
+- DB navigation tree to show all databases in the same account
+- DB navigation tree to show additional schema level objects:
+    * Materialised views
+    * File Formats
+    * Functions
+    * Materialized Views
+    * Pipes
+    * Procedures
+    * Sequences
+    * Stages
+    * Streams
+    * Tasks
+
 ## [0.4.2] - 2021-03-21
 
 ### Added
