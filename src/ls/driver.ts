@@ -220,8 +220,8 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
               .split(',')
               .map(arg => { return arg.trim(); }),
       resultType: func.arguments.split('RETURN ')[1],
-      detail: func.arguments.substring(func.arguments.indexOf("("), func.arguments.lastIndexOf(")") + 1)
-      type: ContextValue.FUNCTION
+      detail: func.arguments.substring(func.arguments.indexOf("("), func.arguments.lastIndexOf(")") + 1),
+      type: ContextValue.FUNCTION,
       childType: ContextValue.NO_CHILD
     }));
 
