@@ -107,7 +107,7 @@ const fetchTasks: ISnowflakeQueries['fetchTasks'] = queryFactory`
 SHOW TASKS IN ${p => p.database}.${p => p.schema}
 `;
 
-const fetchFunctions: IBaseQueries['fetchFunctions'] = queryFactory`
+const fetchSFFunctions: ISnowflakeQueries['fetchSFFunctions'] = queryFactory`
 SHOW USER FUNCTIONS IN ${p => p.database}.${p => p.schema}
 `;
 
@@ -169,7 +169,7 @@ export default {
   fetchColumns,
   fetchDatabases,
   fetchFileFormats,
-  fetchFunctions,
+  fetchSFFunctions,
   fetchMaterializedViews,
   fetchPipes,
   fetchProcedures,

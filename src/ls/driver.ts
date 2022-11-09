@@ -207,9 +207,10 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     }));
   }
 
-  private async getFunctions(parent): Promise<NSDatabase.IFunction[]> {
-    const results = await this.queryResults(this.queries.fetchFunctions(parent));
+  private async getFunctions(parent): Promise<SnowflakeDatabase.IFunction[]> {
+    const results = await this.queryResults(this.queries.fetchSFFunctions(parent));
     var thing = results.map(func => ({
+      ...func,
       name: func.name,
       label: func.name,
       database: func.database_name,
@@ -231,6 +232,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getStages(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IStage[]> {
     const results = await this.queryResults(this.queries.fetchStages(parent));
     return results.map(stage => ({
+      ...stage,
       label: stage.name.replace(/"/g, ''),
       database: stage.database_name,
       schema: stage.schema_name,
@@ -244,6 +246,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getPipes(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IPipe[]> {
     const results = await this.queryResults(this.queries.fetchPipes(parent));
     return results.map(pipe => ({
+      ...pipe,
       label: pipe.name,
       database: pipe.database_name,
       schema: pipe.schema_name,
@@ -257,6 +260,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getStreams(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IStream[]> {
     const results = await this.queryResults(this.queries.fetchStreams(parent));
     return results.map(stream => ({
+      ...stream,
       label: stream.name,
       database: stream.database_name,
       schema: stream.schema_name,
@@ -270,6 +274,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getTasks(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.ITask[]> {
     const results = await this.queryResults(this.queries.fetchTasks(parent));
     return results.map(task => ({
+      ...task,
       label: task.name,
       database: task.database_name,
       schema: task.schema_name,
@@ -283,6 +288,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getProcedures(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IProcedure[]> {
     const results = await this.queryResults(this.queries.fetchProcedures(parent));
     return results.map(proc => ({
+      ...proc,
       label: proc.name,
       database: parent.database,
       schema: proc.schema_name,
@@ -296,6 +302,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getFileFormats(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IFileFormat[]> {
     const results = await this.queryResults(this.queries.fetchFileFormats(parent));
     return results.map(fileFormat => ({
+      ...fileFormat,
       label: fileFormat.name.replace(/"/g, ''),
       database: fileFormat.database_name,
       schema: fileFormat.schema_name,
@@ -309,6 +316,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
   private async getSequences(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.ISequence[]> {
     const results = await this.queryResults(this.queries.fetchSequences(parent));
     return results.map(seq => ({
+      ...seq,
       label: seq.name,
       database: seq.database_name,
       schema: seq.schema_name,

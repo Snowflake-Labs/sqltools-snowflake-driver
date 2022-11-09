@@ -83,6 +83,7 @@ export function deactivate() {}
 export interface ISnowflakeQueries extends IBaseQueries {
   fetchMaterializedViews: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IMaterializedView>;
   fetchStages: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStage>;
+  fetchSFFunctions: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IFunction>;
   fetchPipes: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IPipe>;
   fetchStreams: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStream>;
   fetchTasks: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.ITask>;
@@ -92,12 +93,31 @@ export interface ISnowflakeQueries extends IBaseQueries {
 }
 
 export namespace SnowflakeDatabase {
-  export interface IMaterializedView extends MConnectionExplorer.IChildItem { childType: ContextValue.COLUMN }
-  export interface IStage extends MConnectionExplorer.IChildItem { }
-  export interface IPipe extends MConnectionExplorer.IChildItem { }
-  export interface IStream extends MConnectionExplorer.IChildItem { }
-  export interface ITask extends MConnectionExplorer.IChildItem { }
-  export interface IProcedure extends MConnectionExplorer.IChildItem { }
-  export interface IFileFormat extends MConnectionExplorer.IChildItem { }
-  export interface ISequence extends MConnectionExplorer.IChildItem { }
+  export interface ISnowflakeConstruct {
+    name: string;
+    schema_name: string;
+    database_name: string;
+    arguments: string;
+  }
+
+  export interface IMaterializedView extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { childType: ContextValue.COLUMN }
+  export interface IFunction extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  export interface IStage extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { 
+    url: string;
+  }
+
+  export interface IPipe extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  export interface IStream extends MConnectionExplorer.IChildItem, ISnowflakeConstruct {
+    table_name: string;
+  }
+
+  export interface ITask extends MConnectionExplorer.IChildItem, ISnowflakeConstruct {
+    schedule: string;
+  }
+
+  export interface IProcedure extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  export interface IFileFormat extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  export interface ISequence extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { 
+    next_value: number; 
+  }
 }
