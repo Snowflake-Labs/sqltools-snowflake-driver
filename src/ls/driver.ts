@@ -181,6 +181,10 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       });
   }
 
+  private async getDatabases(): Promise<NSDatabase.IDatabase[]> {
+    return await this.queryResults(this.queries.fetchDatabases());
+  }
+
   private async getColumns(parent: NSDatabase.ITable): Promise<NSDatabase.IColumn[]> {
     const results = await this.queryResults(this.queries.fetchColumns(parent));
     return results.map(col => ({
@@ -328,12 +332,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     switch (item.type) {
       case ContextValue.CONNECTION:
       case ContextValue.CONNECTED_CONNECTION:
-        return <NSDatabase.IDatabase[]>[{
-          label: this.credentials.database.replace(/"/g, ''),
-          database: this.credentials.database,
-          type: ContextValue.DATABASE,
-          detail: 'database'
-        }];
+        return this.getDatabases();
       case ContextValue.DATABASE:
         return <MConnectionExplorer.IChildItem[]>[
           { label: 'Schemas', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.SCHEMA },
