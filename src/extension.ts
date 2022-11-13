@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IExtension, IExtensionPlugin, IDriverExtensionApi, NSDatabase, MConnectionExplorer, IBaseQueries, QueryBuilder, ContextValue } from '@sqltools/types';
+import { IExtension, IExtensionPlugin, IDriverExtensionApi, MConnectionExplorer } from '@sqltools/types';
 import { ExtensionContext } from 'vscode';
 import { DRIVER_ALIASES } from './constants';
 const { publisher, name } = require('../package.json');
@@ -80,28 +80,17 @@ export async function activate(extContext: ExtensionContext): Promise<IDriverExt
 
 export function deactivate() {}
 
-export interface ISnowflakeQueries extends IBaseQueries {
-  fetchMaterializedViews: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IMaterializedView>;
-  fetchStages: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStage>;
-  fetchSFFunctions: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IFunction>;
-  fetchPipes: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IPipe>;
-  fetchStreams: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IStream>;
-  fetchTasks: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.ITask>;
-  fetchProcedures: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IProcedure>;
-  fetchFileFormats: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.IFileFormat>;
-  fetchSequences: QueryBuilder<NSDatabase.ISchema, SnowflakeDatabase.ISequence>;
-}
-
 export namespace SnowflakeDatabase {
   export interface ISnowflakeConstruct {
     name: string;
-    schema_name: string;
-    database_name: string;
-    arguments: string;
+    database: string;
+    schema: string;
+    arguments?: string;
   }
 
-  export interface IMaterializedView extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { childType: ContextValue.COLUMN }
-  export interface IFunction extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  // A custom schema interface is required because SQLTools forces an icon for objects of type NSDatabase.ISchema
+  export interface ISchema extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
+  export interface IMaterializedView extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
   export interface IStage extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { 
     url: string;
   }
@@ -115,7 +104,6 @@ export namespace SnowflakeDatabase {
     schedule: string;
   }
 
-  export interface IProcedure extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
   export interface IFileFormat extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { }
   export interface ISequence extends MConnectionExplorer.IChildItem, ISnowflakeConstruct { 
     next_value: number; 
