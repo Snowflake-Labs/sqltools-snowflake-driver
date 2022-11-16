@@ -1,25 +1,17 @@
-import { IBaseQueries, ContextValue } from '@sqltools/types';
+import { IBaseQueries, ContextValue, NSDatabase } from '@sqltools/types';
 import queryFactory from '@sqltools/base-driver/dist/lib/factory';
-import { ISnowflakeQueries } from '../extension';
-
-/** write your queries here go fetch desired data. This queries are just examples copied from SQLite driver */
+import { SnowflakeDatabase } from '../extension';
 
 const fetchDatabases: IBaseQueries['fetchDatabases'] = queryFactory`
-SELECT database_name as "label"
-     , database_name as "database"
-     , '${ContextValue.DATABASE}' as "type"
-     , 'database' as "detail"
-FROM information_schema.databases
-ORDER BY database_name
+SHOW DATABASES
+`;
+
+const fetchSchemas: IBaseQueries['fetchSchemas'] = queryFactory`
+SHOW SCHEMAS IN "${p => p.database}"
 `;
 
 const describeTable: IBaseQueries['describeTable'] = queryFactory`
-  SELECT C.*
-  FROM ${p => p.database}.information_schema.columns c
-  WHERE table_catalog = UPPER('${p => p.database}')
-        AND table_schema = UPPER('${p => p.schema}')
-        AND table_name = UPPER('${p => p.label}')
-  ORDER BY ordinal_position
+  SELECT 1 AS NOT_IMPLEMENTED
 `;
 
 const fetchColumns: IBaseQueries['fetchColumns'] = queryFactory`
@@ -58,69 +50,48 @@ SELECT COUNT(1) AS "total"
 FROM "${p => p.table.database}"."${p => p.table.schema}"."${p => p.table.label}"
 `;
 
-const fetchTablesAndViews = (type: ContextValue, tableType = 'BASE TABLE'): IBaseQueries['fetchTables'] => queryFactory`
-SELECT table_name as "label",
-  '${type}' as "type",
-  table_schema as "schema",
-  table_catalog as "database",
-  ${type === ContextValue.VIEW ? 'TRUE' : 'FALSE'} as "isView"
-FROM "${p => p.database}".information_schema.tables
-WHERE table_schema = '${p => p.schema}'
-      AND table_type = '${tableType}'
-ORDER BY table_name
+const fetchTables: IBaseQueries['fetchTables'] = queryFactory<NSDatabase.ISchema>`
+SHOW TABLES IN "${p => p.database}".${p => p.label}
 `;
 
-const fetchSchemas: IBaseQueries['fetchSchemas'] = queryFactory`
-SELECT
-  schema_name as "label",
-  schema_name as "schema",
-  '${ContextValue.SCHEMA}' as "type",
-  'group-by-ref-type' as "iconId",
-  catalog_name as "database"
-FROM ${p => p.database}.information_schema.schemata
-WHERE
-  schema_name != 'INFORMATION_SCHEMA'
-ORDER BY 2
+const fetchViews: IBaseQueries['fetchViews'] = queryFactory<NSDatabase.ISchema>`
+SHOW VIEWS IN "${p => p.database}".${p => p.label}
 `;
 
-const fetchTables: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.TABLE);
-
-const fetchMaterializedViews: ISnowflakeQueries['fetchMaterializedViews'] = queryFactory`
-SHOW MATERIALIZED VIEWS IN ${p => p.database}.${p => p.schema}
+const fetchMaterializedViews: IBaseQueries['fetchMaterializedViews'] = queryFactory<SnowflakeDatabase.IMaterializedView>`
+SHOW MATERIALIZED VIEWS IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchViews: IBaseQueries['fetchTables'] = fetchTablesAndViews(ContextValue.VIEW , 'VIEW');
-
-const fetchStages: ISnowflakeQueries['fetchStages'] = queryFactory`
-SHOW STAGES IN ${p => p.database}.${p => p.schema}
+const fetchStages: IBaseQueries['fetchStages'] = queryFactory<SnowflakeDatabase.IStage>`
+SHOW STAGES IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchPipes: ISnowflakeQueries['fetchPipes'] = queryFactory`
-SHOW PIPES IN ${p => p.database}.${p => p.schema}
+const fetchPipes: IBaseQueries['fetchPipes'] = queryFactory<SnowflakeDatabase.IPipe>`
+SHOW PIPES IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchStreams: ISnowflakeQueries['fetchStreams'] = queryFactory`
-SHOW STREAMS IN ${p => p.database}.${p => p.schema}
+const fetchStreams: IBaseQueries['fetchStreams'] = queryFactory<SnowflakeDatabase.IStream>`
+SHOW STREAMS IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchTasks: ISnowflakeQueries['fetchTasks'] = queryFactory`
-SHOW TASKS IN ${p => p.database}.${p => p.schema}
+const fetchTasks: IBaseQueries['fetchTasks'] = queryFactory<SnowflakeDatabase.ITask>`
+SHOW TASKS IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchSFFunctions: ISnowflakeQueries['fetchSFFunctions'] = queryFactory`
-SHOW USER FUNCTIONS IN ${p => p.database}.${p => p.schema}
+const fetchFunctions: IBaseQueries['fetchFunctions'] = queryFactory`
+SHOW USER FUNCTIONS IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchProcedures: ISnowflakeQueries['fetchProcedures'] = queryFactory`
-SHOW USER PROCEDURES IN ${p => p.database}.${p => p.schema}
+const fetchProcedures: IBaseQueries['fetchProcedures'] = queryFactory<NSDatabase.IProcedure>`
+SHOW USER PROCEDURES IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchFileFormats: ISnowflakeQueries['fetchFileFormats'] = queryFactory`
-SHOW FILE FORMATS IN ${p => p.database}.${p => p.schema}
+const fetchFileFormats: IBaseQueries['fetchFileFormats'] = queryFactory<SnowflakeDatabase.IFileFormat>`
+SHOW FILE FORMATS IN ${p => p.database}.${p => p.name}
 `;
 
-const fetchSequences: ISnowflakeQueries['fetchSequences'] = queryFactory`
-SHOW SEQUENCES IN ${p => p.database}.${p => p.schema}
+const fetchSequences: IBaseQueries['fetchSequences'] = queryFactory<SnowflakeDatabase.ISequence>`
+SHOW SEQUENCES IN ${p => p.database}.${p => p.name}
 `;
 
 /**
@@ -131,7 +102,7 @@ SHOW SEQUENCES IN ${p => p.database}.${p => p.schema}
  * 
  * Parsing the output of SHOW commands requires RESULT_SCAN(last_query_id())
  * in two SQL commands, but queryFactory not supporting to run multiple queries.
- */ 
+ */
 const searchTables: IBaseQueries['searchTables'] = queryFactory`
 SELECT 'no-table' as "label",
   '${ContextValue.TABLE}' as "type",
@@ -151,7 +122,7 @@ WHERE 1 = 0
  * 
  * Parsing the output of SHOW commands requires RESULT_SCAN(last_query_id())
  * in two SQL commands, but queryFactory not supporting to run multiple queries.
- */ 
+ */
 const searchColumns: IBaseQueries['searchColumns'] = queryFactory`
 SELECT 'no-column' as "label",
   'no-table' as "table",
@@ -169,7 +140,7 @@ export default {
   fetchColumns,
   fetchDatabases,
   fetchFileFormats,
-  fetchSFFunctions,
+  fetchFunctions,
   fetchMaterializedViews,
   fetchPipes,
   fetchProcedures,

@@ -10,6 +10,16 @@ type DriverOptions = any;
 
 export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOptions> implements IConnectionDriver {
   queries = queries;
+
+  public async testConnection() {
+    await this.open();
+    const testSelect = await this.query('SELECT 1', {});
+    if (testSelect[0].error) {
+      return Promise.reject({ message: `Connected but cannot run SQL. ${testSelect[0].rawError}` });
+    }
+    await this.close();
+  }
+  
   public async open() {
     if (this.connection) {
       return this.connection;
@@ -181,47 +191,159 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       });
   }
 
+  public async getChildrenForItem({ item, parent }: Arg0<IConnectionDriver['getChildrenForItem']>) {
+    switch (item.type) {
+      case ContextValue.CONNECTION:
+      case ContextValue.CONNECTED_CONNECTION:
+        return this.getDatabases();
+      case ContextValue.DATABASE:
+        return this.getSchemas(item as NSDatabase.IDatabase);
+      case ContextValue.SCHEMA:
+        return <MConnectionExplorer.IChildItem[]>[
+          { label: 'Tables', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.TABLE },
+          { label: 'Materialized Views', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.MATERIALIZED_VIEW },
+          { label: 'Views', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.VIEW },
+          { label: 'Stages', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Pipes', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Streams', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Tasks', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Functions', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.FUNCTION },
+          { label: 'Procedures', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'File Formats', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+          { label: 'Sequences', type: ContextValue.RESOURCE_GROUP, iconId: 'group-by-ref-type', childType: ContextValue.RESOURCE_GROUP },
+        ];
+      case ContextValue.TABLE:
+      case ContextValue.MATERIALIZED_VIEW:
+      case ContextValue.VIEW:
+        return this.getColumns(item as NSDatabase.ITable);
+      case ContextValue.RESOURCE_GROUP:
+        return this.getChildrenForGroup({ item, parent });
+    }
+    return [];
+  }
+
+  private async getChildrenForGroup({ parent, item }: Arg0<IConnectionDriver['getChildrenForItem']>) {
+    switch (item.childType) {
+      case ContextValue.SCHEMA:
+        return this.getSchemas(parent as NSDatabase.IDatabase);
+      case ContextValue.TABLE:
+        return this.getTables(parent as NSDatabase.ISchema);
+      case ContextValue.VIEW:
+        return this.getViews(parent as NSDatabase.ISchema);
+      case ContextValue.MATERIALIZED_VIEW:
+        return this.getMaterializedViews(parent as NSDatabase.ISchema);
+      case ContextValue.FUNCTION:
+        return this.getFunctions(parent as NSDatabase.ISchema);
+      case ContextValue.RESOURCE_GROUP:
+        switch (item.label) {
+          case 'Stages':
+            return this.getStages(parent as NSDatabase.ISchema);
+          case 'Pipes':
+            return this.getPipes(parent as NSDatabase.ISchema);
+          case 'Streams':
+            return this.getStreams(parent as NSDatabase.ISchema);
+          case 'Tasks':
+            return this.getTasks(parent as NSDatabase.ISchema);
+          case 'Procedures':
+            return this.getProcedures(parent as NSDatabase.ISchema);
+          case 'File Formats':
+            return this.getFileFormats(parent as NSDatabase.ISchema);
+          case 'Sequences':
+            return this.getSequences(parent as NSDatabase.ISchema);
+        }
+      }
+    return [];
+  }
+
   private async getDatabases(): Promise<NSDatabase.IDatabase[]> {
-    return await this.queryResults(this.queries.fetchDatabases());
+    const results = await this.queryResults(this.queries.fetchDatabases());
+    return results.map(database => ({
+      ...database,
+      label: database['name'],
+      database: database['name'],
+      schema: null,
+      type: ContextValue.DATABASE
+    }));
+  }
+
+  private async getSchemas(parent: NSDatabase.IDatabase): Promise<SnowflakeDatabase.ISchema[]> {
+    const results = await this.queryResults(this.queries.fetchSchemas(parent));
+    return results.map(schema => ({
+      ...schema,
+      name: schema['name'],
+      label: schema['name'],
+      database: schema['database_name'],
+      schema: schema['schema_name'],
+      iconId: 'folder',
+      type: ContextValue.SCHEMA,
+      isView: true,
+    }));
+  }
+
+  private async getTables(parent: NSDatabase.ISchema): Promise<NSDatabase.ITable[]> {
+    const results = await this.queryResults(this.queries.fetchTables(parent));
+    return results.map(table => ({
+      ...table,
+      label: table['name'],
+      database: table['database_name'],
+      schema: table['schema_name'],
+      iconId: 'table',
+      type: ContextValue.TABLE,
+      isView: false,
+    }));
+  }
+
+  private async getMaterializedViews(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IMaterializedView[]> {
+    const results = await this.queryResults(this.queries.fetchMaterializedViews(parent));
+    return results.map(mv => ({
+      ...mv,
+      label: mv.name,
+      database: mv.database_name,
+      schema: mv.schema_name,
+      iconId: 'table',
+      type: ContextValue.MATERIALIZED_VIEW,
+      isView: true,
+    }));
+  }
+
+  private async getViews(parent: NSDatabase.ISchema): Promise<NSDatabase.ITable[]> {
+    const results = await this.queryResults(this.queries.fetchViews(parent));
+    return results.map(view => ({
+      ...view,
+      label: view.name,
+      database: view.database_name,
+      schema: view.schema_name,
+      iconId: 'table',
+      type: ContextValue.VIEW,
+      isView: true,
+    }));
   }
 
   private async getColumns(parent: NSDatabase.ITable): Promise<NSDatabase.IColumn[]> {
     const results = await this.queryResults(this.queries.fetchColumns(parent));
     return results.map(col => ({
       ...col,
-      iconName: null,
-      childType: ContextValue.NO_CHILD,
-      table: parent
+      iconId: 'dash',
+      type: ContextValue.COLUMN,
+      childType: ContextValue.NO_CHILD
     }));
   }
 
-  private async getMaterializedViews(parent): Promise<NSDatabase.ITable[]> {
-    const results = await this.queryResults(this.queries.fetchMaterializedViews(parent));
-    return results.map(mv => ({
-      label: mv.name,
-      database: mv.database_name,
-      schema: mv.schema_name,
-      iconId: 'table',
-      type: ContextValue.TABLE,
-      isView: true,
-    }));
-  }
-
-  private async getFunctions(parent): Promise<SnowflakeDatabase.IFunction[]> {
-    const results = await this.queryResults(this.queries.fetchSFFunctions(parent));
+  private async getFunctions(parent: NSDatabase.ISchema): Promise<NSDatabase.IFunction[]> {
+    const results = await this.queryResults(this.queries.fetchFunctions(parent));
     var thing = results.map(func => ({
       ...func,
       name: func.name,
       label: func.name,
-      database: func.database_name,
-      schema: func.schema_name,
-      signature: func.arguments,
-      args: func.arguments
-              .substring(func.arguments.indexOf("(") + 1, func.arguments.lastIndexOf(")"))
+      database_name: func['database_name'],
+      schema_name: func['schema_name'],
+      signature: func['arguments'],
+      arguments: func['arguments']
+              .substring(func['arguments'].indexOf("(") + 1, func['arguments'].lastIndexOf(")"))
               .split(',')
               .map(arg => { return arg.trim(); }),
-      resultType: func.arguments.split('RETURN ')[1],
-      detail: func.arguments.substring(func.arguments.indexOf("("), func.arguments.lastIndexOf(")") + 1),
+      resultType: func['arguments'].split('RETURN ')[1],
+      detail: func['arguments'].substring(func['arguments'].indexOf("("), func['arguments'].lastIndexOf(")") + 1),
       type: ContextValue.FUNCTION,
       childType: ContextValue.NO_CHILD
     }));
@@ -256,7 +378,6 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     }));
   }
 
-  // TODO: Validate that this is correct
   private async getStreams(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IStream[]> {
     const results = await this.queryResults(this.queries.fetchStreams(parent));
     return results.map(stream => ({
@@ -285,7 +406,7 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
     }));
   }
 
-  private async getProcedures(parent: NSDatabase.ISchema): Promise<SnowflakeDatabase.IProcedure[]> {
+  private async getProcedures(parent: NSDatabase.ISchema): Promise<NSDatabase.IProcedure[]> {
     const results = await this.queryResults(this.queries.fetchProcedures(parent));
     return results.map(proc => ({
       ...proc,
@@ -325,80 +446,6 @@ export default class SnowflakeDriver extends AbstractDriver<DriverLib, DriverOpt
       iconId: 'list-ordered',
       detail: seq.next_value.toString()
     }));
-  }
-
-  public async testConnection() {
-    await this.open();
-    const testSelect = await this.query('SELECT 1', {});
-    if (testSelect[0].error) {
-      return Promise.reject({ message: `Connected but cannot run SQL. ${testSelect[0].rawError}` });
-    }
-    await this.close();
-  }
-
-  public async getChildrenForItem({ item, parent }: Arg0<IConnectionDriver['getChildrenForItem']>) {
-    switch (item.type) {
-      case ContextValue.CONNECTION:
-      case ContextValue.CONNECTED_CONNECTION:
-        return this.getDatabases();
-      case ContextValue.DATABASE:
-        return <MConnectionExplorer.IChildItem[]>[
-          { label: 'Schemas', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.SCHEMA },
-        ];
-      case ContextValue.SCHEMA:
-        return <MConnectionExplorer.IChildItem[]>[
-          { label: 'Tables', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.TABLE },
-          { label: 'Materialized Views', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.MATERIALIZED_VIEW },
-          { label: 'Views', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.VIEW },
-          { label: 'Stages', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'Pipes', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'Streams', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'Tasks', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'Functions', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.FUNCTION },
-          { label: 'Procedures', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'File Formats', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-          { label: 'Sequences', type: ContextValue.RESOURCE_GROUP, iconId: 'folder', childType: ContextValue.RESOURCE_GROUP },
-        ];
-      case ContextValue.TABLE:
-      case ContextValue.VIEW:
-        return this.getColumns(item as NSDatabase.ITable);
-      case ContextValue.RESOURCE_GROUP:
-        return this.getChildrenForGroup({ item, parent });
-    }
-    return [];
-  }
-
-  private async getChildrenForGroup({ parent, item }: Arg0<IConnectionDriver['getChildrenForItem']>) {
-    switch (item.childType) {
-      case ContextValue.SCHEMA:
-        return this.queryResults(this.queries.fetchSchemas(parent as NSDatabase.IDatabase));
-      case ContextValue.TABLE:
-        return this.queryResults(this.queries.fetchTables(parent as NSDatabase.ISchema));
-      case ContextValue.VIEW:
-        return this.queryResults(this.queries.fetchViews(parent as NSDatabase.ISchema));
-      case ContextValue.MATERIALIZED_VIEW:
-        return this.getMaterializedViews(parent as NSDatabase.ISchema);
-      case ContextValue.FUNCTION:
-        return this.getFunctions(parent as NSDatabase.ISchema);
-      case ContextValue.RESOURCE_GROUP:
-        switch (item.label) {
-          case 'Stages':
-            return this.getStages(parent as NSDatabase.ISchema);
-          case 'Pipes':
-            return this.getPipes(parent as NSDatabase.ISchema);
-          case 'Streams':
-            return this.getStreams(parent as NSDatabase.ISchema);
-          case 'Tasks':
-            return this.getTasks(parent as NSDatabase.ISchema);
-          case 'Procedures':
-            return this.getProcedures(parent as NSDatabase.ISchema);
-          case 'File Formats':
-            return this.getFileFormats(parent as NSDatabase.ISchema);
-          case 'Sequences':
-            return this.getSequences(parent as NSDatabase.ISchema);
-        }
-      }
-    return [];
   }
 
   public async searchItems(itemType: ContextValue, search: string, _extraParams: any = {}): Promise<NSDatabase.SearchableItem[]> {
