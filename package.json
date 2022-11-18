@@ -11,10 +11,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koszti/sqltools-snowflake-driver.git"
+    "url": "https://github.com/Snowflake-Labs/sqltools-snowflake-driver.git"
   },
   "bugs": {
-    "url": "https://github.com/koszti/sqltools-snowflake-driver/issues",
+    "url": "https://github.com/Snowflake-Labs/sqltools-snowflake-driver/issues",
     "email": "peter.kosztolanyi@gmail.com"
   },
   "scripts": {
